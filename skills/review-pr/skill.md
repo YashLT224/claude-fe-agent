@@ -250,6 +250,26 @@ After all parallel checks complete, compile a unified report:
 
 ---
 
+## Frontend Anti-Patterns
+{count} issues found
+
+### Critical (Data Integrity)
+| File | Line | Pattern | Issue |
+|------|------|---------|-------|
+| ... | ... | Stale data on transition | ... |
+
+### Major (Performance/Correctness)
+| File | Line | Pattern | Issue |
+|------|------|---------|-------|
+| ... | ... | Stale useEffect deps | ... |
+
+### Minor (Code Hygiene)
+| File | Line | Pattern | Issue |
+|------|------|---------|-------|
+| ... | ... | Missing braces | ... |
+
+---
+
 ## Code Quality Issues
 (from code-reviewer agent)
 
@@ -302,12 +322,168 @@ git branch -D pr-{number} 2>/dev/null
 
 No cleanup needed if you used the `gh api` method (recommended) — it doesn't create any local state.
 
+### 5e. Common Frontend Anti-Patterns Check (you do this yourself)
+
+Scan all changed files for these frequently missed patterns. These are real bugs and code quality issues found in production PRs.
+
+#### Rendering & Performance
+
+1. **Pure functions defined inside components/hooks that don't use closures**
+   - Functions that only use their own parameters should be at module level or in a util file
+   - They get recreated on every render/recompute unnecessarily
+   ```
+   // BAD: inside component
+   const addToMap = (map, key) => { map[key] = true; };
+   
+   // GOOD: module level or util file
+   const addToMap = (map, key) => { map[key] = true; };
+   const MyComponent = () => { ... };
+   ```
+
+2. **Functions defined inside useEffect that don't need closure variables**
+   - Pure helper functions inside useEffect should be moved outside
+   - Only keep functions inside useEffect if they read state/refs from the closure
+
+3. **Missing or stale useEffect dependency arrays**
+   - Effect reads variables (state, props, derived values) but doesn't list them in deps
+   - Causes stale closures when values change without re-running the effect
+   ```
+   // BAD: reads testId but not in deps
+   useEffect(() => {
+     if (sseTestId === testId) { ... }
+   }, [sseEventData]);
+   
+   // GOOD
+   useEffect(() => {
+     if (sseTestId === testId) { ... }
+   }, [sseEventData, testId]);
+   ```
+
+#### Data Integrity
+
+4. **Stale data not cleared on state transitions**
+   - When toggling between states (hide/restore, enable/disable), related fields must be reset
+   - e.g., clearing a `reason` field when restoring an issue that was hidden with a reason
+   ```
+   // BAD: reason persists from previous hide
+   return { ...issue, hidden: false };
+   
+   // GOOD: explicitly clear stale fields
+   return { ...issue, hidden: false, reason: null };
+   ```
+
+5. **Scope escalation bugs in hierarchical data**
+   - When UI allows changing scope (e.g., single item -> group -> all), associated data (IDs, counts) must be recomputed
+   - Common bug: modal opens with 1 item's data, user selects broader scope, but action still uses original 1 item
+   ```
+   // BAD: always uses original IDs regardless of scope change
+   return originalIssueIds;
+   
+   // GOOD: recompute IDs based on selected scope
+   if (selectedLevel === 'group') {
+     return group.items.map(i => i.id);
+   }
+   return originalIssueIds;
+   ```
+
+6. **Inconsistent counts between views and exports (PDF/CSV/JSON)**
+   - Dashboard may recompute counts from filtered Redux state
+   - Exports may use a different data source or miss filters
+   - Always verify that export functions apply the same filters as the UI
+
+7. **`undefined` keys in object accumulation**
+   - When building maps/objects from nullable properties, guard against undefined keys
+   - `obj[undefined] = true` silently adds an `"undefined"` key, inflating counts
+   ```
+   // BAD: creates obj["undefined"] when tagName is null
+   let tagName = issue?.htmlTagName?.toLowerCase();
+   uniqueTags[tagName] = true;
+   
+   // GOOD
+   let tagName = issue?.htmlTagName?.toLowerCase();
+   if (tagName) { uniqueTags[tagName] = true; }
+   ```
+
+#### Code Hygiene
+
+8. **Hardcoded string literals repeated across files**
+   - Repeated strings like `'url'`, `'rule'`, `'element'` used for comparisons should be enums/constants
+   - Especially when the same strings appear in 3+ files
+   ```
+   // BAD: scattered across files
+   if (level === 'elementGroup') { ... }
+   
+   // GOOD: centralized enum
+   export const Level = { ELEMENT_GROUP: 'elementGroup' };
+   if (level === Level.ELEMENT_GROUP) { ... }
+   ```
+
+9. **`includes()` used for prefix matching instead of `startsWith()`**
+   - `includes()` matches anywhere in the string, causing false positives
+   - When checking if a string begins with a prefix, always use `startsWith()`
+   ```
+   // BAD: "MANUAL_AUT_123".includes("AUT") === true (false positive)
+   if (testId.includes(PREFIX.AUTOMATION)) { ... }
+   
+   // GOOD
+   if (testId.startsWith(PREFIX.AUTOMATION)) { ... }
+   ```
+
+10. **Duplicate DOM `id` attributes inside `.map()` loops**
+    - `id` must be unique in the document; duplicates break `getElementById`, a11y tools, and CSS `#` selectors
+    - Use `className` for styling/querying multiple elements, or make IDs unique per iteration
+
+11. **Missing braces on single-line if/else**
+    - Can cause bugs when someone adds a second line expecting it to be inside the condition
+    - Project convention: always use `{}` braces
+
+12. **Inconsistent optional chaining**
+    - If one branch uses `obj?.method()`, all branches accessing the same object should
+    - Mixed usage suggests a missed null-safety check
+    ```
+    // BAD: inconsistent
+    if (testId?.startsWith(A) || testId.startsWith(B)) { ... }
+    
+    // GOOD
+    if (testId?.startsWith(A) || testId?.startsWith(B)) { ... }
+    ```
+
+13. **Missing default parameter values on utility functions**
+    - Functions that access properties on parameters should have defaults to prevent crashes
+    ```
+    // BAD: crashes if called with undefined
+    const compare = (a, b) => a.level === b.level;
+    
+    // GOOD
+    const compare = (a = {}, b = {}) => a?.level === b?.level;
+    ```
+
+14. **Reusable component/hook extraction opportunities**
+    - Two or more components with identical state logic -> extract a custom hook
+    - Two or more components with identical UI patterns -> extract a shared component
+    - Only flag when the duplication is substantial (not just 2-3 similar lines)
+
+For each anti-pattern found, report:
+```
+ANTI-PATTERN: {pattern name}
+  File: src/components/MyComponent.tsx:45
+  Issue: {description}
+  Fix: {suggested fix}
+  Severity: Critical | Major | Minor
+```
+
+**Severity guide:**
+- **Critical**: Data integrity bugs (items 4-7) — wrong data shown/sent to backend
+- **Major**: Performance/correctness issues (items 1-3), missing enums used in 3+ files (item 8)
+- **Minor**: Code hygiene (items 9-14) — style and maintainability
+
 ## Rules
 
 - **Never auto-fix or push changes.** This is a review skill, not a fix skill.
 - **Always provide file paths and line numbers** for every finding.
 - **Be constructive** — acknowledge good patterns alongside issues.
 - **Hardcoded colors and lt-components violations are always REQUEST CHANGES** — these are non-negotiable LambdaTest standards.
+- **Anti-pattern Critical/Major issues should be REQUEST CHANGES** — these are real bugs.
 - **For the code-reviewer and security-audit sub-agents**, pass only the changed file paths and relevant context — not your entire conversation.
 - If the PR is too large (>50 files), warn the user and offer to review in batches or focus on specific directories.
 - If `gh` CLI is not available, instruct the user to install and authenticate: `brew install gh && gh auth login`.
