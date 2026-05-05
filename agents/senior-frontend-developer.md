@@ -42,6 +42,7 @@ Parse the user's prompt for flags **before** starting any work. Flags can appear
 | `--skip-review` | Phase 7 (validate) | P1 → P2 → P3 → P4 → P5 → **P6** |
 | `--skip-tests --skip-review` | Phase 5 + Phase 7 | P1 → P2 → P3 → P4 → **P6** |
 | `--quick` | Shorthand for `--skip-tests --skip-review` | Same as above |
+| `--shorthand` | Phase 4 + Phase 5 + Phase 7 | P1 → P2 → P3 → **P6** (invoked by `/execute`) |
 
 ### `--direct` mode (for small tasks)
 
@@ -368,6 +369,38 @@ Persists the plan that the user approves. Previously this only lived in the conv
 - **Read** by test-writer and implementation phases
 - Mark `Status: approved` once user approves
 
+### `workflow-state/todo.md` — Granular Task Checklist
+
+A live checkbox list of implementation tasks derived from `plan.md`. Survives across context resets so you (and the user) can see progress at a glance.
+
+- **Created** in Phase 4, immediately after `plan.md` is written
+- **Populated** with one task per file in "Files to Create"/"Files to Modify", plus one per edge case, a11y item, and Phase 7 cleanup step
+- **Updated** by senior-fe in Phase 6 — check off `[x]` as each task completes
+- **Grouped by phase** (Tests / Implementation / Cleanup) for clarity
+- **Never delete an item** — only check it off (audit trail)
+
+Example shape:
+```markdown
+# TODO — TTN-12345 A/B Testing Feature
+**Plan:** workflow-state/plan.md
+**Status:** in-progress
+
+## Phase 5 — Tests
+- [ ] Failing test for useABVariant hook
+- [ ] Failing test for ABTest component fallback
+
+## Phase 6 — Implementation
+- [ ] src/hooks/useABVariant.ts
+- [ ] src/components/ABTest.tsx
+- [ ] config/experiments.ts — register experiment
+- [ ] Wire ABTest into TodoList header
+
+## Phase 7 — Cleanup
+- [ ] /review-changes findings resolved
+- [ ] /security-audit findings resolved
+- [ ] a11y check pass
+```
+
 ### `workflow-state/testCases.md` — Test Case Tracker
 
 - **Created** at the start of the implementation phase
@@ -431,6 +464,9 @@ exploration.json   /explore-codebase       —                    —
 
 plan.md            senior-fe agent         senior-fe agent      user (approves)
                    (creates plan)          (revises if needed)
+
+todo.md            senior-fe agent         senior-fe agent      —
+                   (creates in P4)         (checks off in P6)
 
 testCases.md       test-writer agent       senior-fe agent      test-case-verifier
                    (writes tests +         (fixes code OR       (runs tests,
@@ -619,7 +655,24 @@ Based on approved approach + exploration findings, create a detailed plan.
 - [explicitly excluded items]
 ```
 
-**★ STOP HERE. Present the plan and wait for user approval. ★**
+### Generate todo.md
+After writing `plan.md`, also create `workflow-state/todo.md` — a granular task checklist derived from the plan:
+
+- One task per file in "Files to Create" / "Files to Modify"
+- One task per edge case + a11y consideration
+- Group tasks by phase: **Phase 5 — Tests**, **Phase 6 — Implementation**, **Phase 7 — Cleanup**
+- All items start unchecked `- [ ]`
+- senior-fe checks them off `- [x]` in Phase 6 as work completes
+
+### Grill the plan before approval
+**Invoke `/grill-me`** to stress-test the plan you just wrote:
+- Read `workflow-state/plan.md` and walk each section/branch
+- Ask one clarification at a time, each with a `**Recommendation:**`
+- Update `workflow-state/plan.md` inline as the user answers
+- Skip categories already fully specified; don't re-grill settled decisions
+- Stop when every open branch has an explicit answer
+
+**★ STOP HERE. Present the grilled plan and wait for user approval. ★**
 - If user requests changes → revise `workflow-state/plan.md`
 - If user approves → mark `Status: approved` in plan.md → proceed to Phase 5
 
@@ -667,17 +720,25 @@ Update `state.json`: `currentPhase: "phase6_implement"`, status: `"in-progress"`
 
 ### Implementation
 - Follow the plan step by step
+- **Work from `workflow-state/todo.md`** — pick the next unchecked item, complete it, then update the file: `- [ ]` → `- [x]`
 - Use existing project patterns and components
 - Write clean, production-ready code
 - Follow the project's conventions (from CLAUDE.md if available)
 - Implement in logical chunks (component → state → integration)
 - If task is large (>10 files), implement in batches
 
-**If Figma design exists → use `/design-to-code` skill for UI components:**
+**ALWAYS invoke `/design-to-code` skill for any UI work** (not only when a Figma link exists):
 - Auto-detects framework, component libraries, styling approach
 - Builds **Figma hex → theme token mapping** before writing any code
 - **NEVER hardcode hex colors** — always use theme tokens
 - If a Figma color has no matching theme token → ask user before proceeding
+
+**Maximize use of `@lambdatestincprivate/lt-components`** (LambdaTest design system):
+- Before building ANY new UI primitive, search lt-components first (Button, Input, Modal, Dropdown, Toggle, Toast, Tabs, Tooltip, Card, etc.)
+- Prefer composing lt-components over creating custom components
+- Only build custom when lt-components has no suitable primitive
+- If a needed primitive is missing → flag to user (extend lt-components instead of forking locally)
+- When in doubt, list the lt-components candidates you considered before defaulting to custom code
 
 ### Make tests GREEN (if Phase 5 was not skipped)
 After implementation, run the tests:
