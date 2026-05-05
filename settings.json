@@ -90,5 +90,7 @@
       "type": "http",
       "url": "https://mcp.github.com/v1/mcp"
     }
-  }
+  },
+  "theme": "dark-ansi",
+  "effortLevel": "max"
 }
