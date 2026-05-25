@@ -54,7 +54,8 @@
     "github@claude-plugins-official": true,
     "atlassian@claude-plugins-official": true,
     "figma@claude-plugins-official": true,
-    "plan-visualizer@claude-plan-visualizer": true
+    "plan-visualizer@claude-plan-visualizer": true,
+    "frontend-design@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-team-plugins": {
@@ -91,6 +92,5 @@
       "url": "https://mcp.github.com/v1/mcp"
     }
   },
-  "theme": "dark-ansi",
-  "effortLevel": "max"
+  "theme": "dark-ansi"
 }
