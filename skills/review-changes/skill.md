@@ -1,7 +1,7 @@
 ---
 name: review-changes
 description: Review modified files for best practices, duplication, and accessibility
-allowed-tools: Bash, Read, Grep, Glob, Edit, Write, Task
+allowed-tools: Bash, Read, Grep, Glob, Edit, Write, Agent
 ---
 
 # Review Changes
@@ -117,7 +117,7 @@ DUPLICATE FOUND:
 
 ## Step 6: Accessibility Review
 
-Launch the **a11y-checker** agent (Task tool with subagent_type "a11y-checker") to perform a full accessibility audit on the changed files. Pass it the list of modified files.
+Launch the **a11y-checker** agent using the Agent tool to perform a full accessibility audit on the changed files. Pass it the list of modified files.
 
 The a11y-checker will check for:
 - Missing aria-labels on interactive elements

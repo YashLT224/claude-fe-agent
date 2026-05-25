@@ -10,9 +10,9 @@ Interview the user relentlessly about every aspect of the plan until you reach a
 ## Rules
 
 1. **One question at a time.** Never bulk-ask. Wait for the user's answer before moving on.
-2. **Explore before asking.** If a question can be answered by reading `workflow-state/plan.md`, `workflow-state/exploration.json`, `package.json`, theme files, or `@lambdatestincprivate/lt-components` — explore first. Don't ask what you can find on disk.
+2. **Explore before asking.** If a question can be answered by reading `.claude/workflow-state/plan.md`, `.claude/workflow-state/exploration.json`, `package.json`, theme files, or `@lambdatestincprivate/lt-components` — explore first. Don't ask what you can find on disk.
 3. **Always recommend an answer.** End every question with `**Recommendation:** ...` so the user can say "yes" and move on.
-4. **Update plan.md as you go.** When the user gives an answer that affects the plan, write it into `workflow-state/plan.md` immediately — don't batch updates to the end.
+4. **Update plan.md as you go.** When the user gives an answer that affects the plan, write it into `.claude/workflow-state/plan.md` immediately — don't batch updates to the end.
 5. **Stop on alignment, not silence.** If the user keeps deferring ("you decide", "whatever"), take the recommendation and move on.
 6. **Don't re-grill what's already settled.** If `plan.md` already specifies a decision clearly, skip it.
 
@@ -43,8 +43,8 @@ Your call?
 
 Stop grilling when ALL of these are true:
 
-- Every open branch in `workflow-state/plan.md` has an explicit answer
-- Recommendations align with `CLAUDE.md` and patterns from `workflow-state/exploration.json`
+- Every open branch in `.claude/workflow-state/plan.md` has an explicit answer
+- Recommendations align with `CLAUDE.md` and patterns from `.claude/workflow-state/exploration.json`
 - The user confirms with "approve" / "looks good" / "ship it" / equivalent
 
 Then summarize what changed in `plan.md` and hand control back to the orchestrator (sfe Phase 4) for the formal approval step.

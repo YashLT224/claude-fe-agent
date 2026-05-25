@@ -1,3 +1,9 @@
+---
+name: explore-codebase
+description: Explore a frontend repository for task-relevant architecture, reusable patterns, component and state conventions, and similar implementation examples. Use during feature planning or before implementing a non-trivial change.
+allowed-tools: Read, Grep, Glob, Bash, Agent
+---
+
 # Explore Codebase Skill (Phase 2)
 
 ## Description
@@ -116,7 +122,7 @@ Phase 2 launches 3 PARALLEL exploration agents
 #### Agent 1: Similar Features Explorer
 
 ```
-Task tool parameters:
+Agent tool parameters:
   description: "Find similar features"
   subagent_type: "Explore"
   run_in_background: true
@@ -159,7 +165,7 @@ Task tool parameters:
 #### Agent 2: Architecture & Flow Explorer
 
 ```
-Task tool parameters:
+Agent tool parameters:
   description: "Map architecture"
   subagent_type: "Explore"
   run_in_background: true
@@ -210,7 +216,7 @@ Task tool parameters:
 #### Agent 3: Patterns & Conventions Explorer
 
 ```
-Task tool parameters:
+Agent tool parameters:
   description: "Analyze patterns"
   subagent_type: "Explore"
   run_in_background: true

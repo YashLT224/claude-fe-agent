@@ -1,95 +1,40 @@
 ---
 name: execute
-description: Shorthand SFE implementation. Invokes the senior-frontend-developer agent in shorthand mode — runs Phase 1 (gather requirements), Phase 2 (explore codebase), Phase 3 (decide approach), and Phase 6 (implement). Skips Phase 4 (formal plan), Phase 5 (TDD tests), and Phase 7 (review). Use for medium-sized changes that need real engineering judgment but not the full pipeline. Argument is a short task description, e.g. "delete button in todo".
+description: Implement a medium-sized frontend change through focused requirements, code exploration, an approved short approach, implementation, and targeted verification.
+disable-model-invocation: true
 ---
 
-# /execute — Shorthand SFE Implementation
+# Execute Daily Frontend Change
 
-A condensed senior-frontend-developer workflow. Skips formal planning, TDD tests, and the validation pass — keeps the parts that prevent the agent from flying blind (requirements, exploration, approach approval).
+Use `/execute $ARGUMENTS` for normal frontend work such as a filter, loading
+state, responsive fix, form validation change, or reusable component addition.
 
-## Triggers
+## Flow
 
-- User invokes `/execute <task description>`
-- Examples:
-  - `/execute delete button in todo`
-  - `/execute add filter dropdown to dashboard`
-  - `/execute sticky header on settings page`
+1. Capture the objective, expected behavior, and key edge cases.
+2. Read affected files and comparable existing patterns.
+3. Present a concise implementation approach and wait for approval.
+4. Implement using current components, tokens, state/API style, and tests.
+5. Run targeted checks and `/visual-check` for rendered UI changes.
 
-## What runs (only these phases)
+If the change becomes broad, architecture-sensitive, security-sensitive, or a
+large new user flow, recommend switching to `/implement`.
 
-| Phase | Step |
-|-------|------|
-| **P1** | Gather Requirements — clarify intent, fetch Jira ticket if mentioned, capture acceptance criteria |
-| **P2** | Explore Codebase — `/explore-codebase` finds similar patterns, files to touch, lt-components available |
-| **P3** | Decide Approach — present approach with trade-offs ★ user approves ★ |
-| **P6** | Execute Implementation — write code, invoke `/design-to-code` for any UI work, prefer lt-components |
+## State
 
-## What is skipped
+Create only:
 
-- **P4** — formal `plan.md` (the P3 approach summary takes its place)
-- **P5** — TDD tests
-- **P7** — `/review-changes`, `/security-audit`, a11y audit
-
-## How to invoke the agent
-
-Spawn the **senior-frontend-developer** sub-agent via the Task tool. Pass it:
-
-```
-Mode: --shorthand
-Task: $ARGUMENTS
-
-Run ONLY Phase 1, Phase 2, Phase 3, Phase 6.
-Skip Phase 4 (plan), Phase 5 (tests), Phase 7 (validation).
-
-In Phase 6:
-- Always invoke /design-to-code for any UI work
-- Prefer @lambdatestincprivate/lt-components over custom UI
+```text
+.claude/workflow-state/state.json
+.claude/workflow-state/requirements.json
+.claude/workflow-state/exploration.json
+.claude/workflow-state/progress.md
 ```
 
-## workflow-state behavior
+Do not create a plan, test tracker, issue tracker, or report unless the user
+upgrades the task to the full workflow.
 
-Still create `workflow-state/` for traceability, but only these files:
+## Completion
 
-- `state.json` — track phases (mark P4/P5/P7 as `skipped`)
-- `exploration.json` — Phase 2 output
-- `progress.md` — phase log
-
-Do **not** create: `plan.md`, `testCases.md`, `issues.md`, `report.md`.
-
-## Banner
-
-The agent prints:
-
-```
-🟢 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   AGENT: senior-frontend-developer
-   STATUS: Active
-   MODE: --shorthand
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🟢 [senior-fe] Phase 1: Gathering requirements...
-🟢 [senior-fe] Phase 2: Exploring codebase...
-🟢 [senior-fe] Phase 3: Deciding approach...
-🟢 [senior-fe] Phase 4: Planning — SKIPPED (--shorthand)
-🟢 [senior-fe] Phase 5: Tests — SKIPPED (--shorthand)
-🟢 [senior-fe] Phase 6: Executing implementation...
-🟢 [senior-fe] Phase 7: Validation — SKIPPED (--shorthand)
-🟢 [senior-fe] Done!
-```
-
-## When to use vs. other modes
-
-| Use this | When |
-|----------|------|
-| `/execute` (--shorthand) | Medium task, you want real exploration + approach gate, but not the heavy pipeline |
-| `--quick` | Prototype/spike, you've already decided the approach, just want it built |
-| `--direct` | Truly tiny edit (rename, typo, single-line fix) |
-| `/implement` or full sfe | Real feature work, ticket-driven, needs tests + review |
-
-## Final output
-
-A short summary instead of `report.md`:
-
-- What was built (1-2 sentences)
-- Files changed (table: file / created-or-modified)
-- Note: "Tests + review skipped — run `/review-changes` and add tests before merging if this is going to production."
+Return what changed, files touched, checks performed, visual verification when
+applicable, and any unverified risk.

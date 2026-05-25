@@ -10,6 +10,22 @@
     "auto_detect_tech_stack": true
   },
 
+  "workflow_contracts": {
+    "implement": {
+      "purpose": "production feature or major approved fix",
+      "phases": ["requirements", "exploration", "approach", "plan", "tests", "execution", "validation"]
+    },
+    "execute": {
+      "purpose": "medium daily frontend change",
+      "phases": ["requirements", "exploration", "approach", "execution", "targeted_validation"]
+    },
+    "direct": {
+      "purpose": "tiny self-contained edit",
+      "phases": ["execution", "targeted_validation"],
+      "creates_state": false
+    }
+  },
+
   "tech_stack_detection": {
     "_comment": "Auto-detect project type from package.json and file structure",
     "detection_files": ["package.json", "tsconfig.json", "vite.config.js", "next.config.js", "nuxt.config.js"],
@@ -175,8 +191,10 @@
     "type_check": "auto-detect",
     "bundle_analysis": false,
     "visual_testing": {
-      "enabled": false,
-      "tool": "playwright"
+      "enabled": true,
+      "required_for": ["ui", "layout", "responsive", "interactive"],
+      "skill": "visual-check",
+      "viewports": ["desktop", "mobile"]
     }
   },
 

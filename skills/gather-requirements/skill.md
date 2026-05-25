@@ -1,3 +1,9 @@
+---
+name: gather-requirements
+description: Gather and structure frontend task requirements from Jira, GitHub issues, or manual input before implementation. Use when starting ticket-based work or when acceptance criteria are unclear.
+allowed-tools: Read, Grep, Glob, Bash, WebFetch, Agent
+---
+
 # Gather Requirements Skill (Phase 1)
 
 ## Description
@@ -65,7 +71,7 @@ Detect ticket source from format:
 
 #### For JIRA Tickets:
 ```
-Task tool parameters:
+Agent tool parameters:
   description: "Fetch Jira ticket"
   subagent_type: "general-purpose"
   run_in_background: false
@@ -91,7 +97,7 @@ Task tool parameters:
 
 #### For GitHub Issues:
 ```
-Task tool parameters:
+Agent tool parameters:
   description: "Fetch GitHub issue"
   subagent_type: "general-purpose"
   run_in_background: false

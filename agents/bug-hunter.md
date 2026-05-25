@@ -1,7 +1,7 @@
 ---
 name: bug-hunter
 description: "Bug triage agent. Intakes a bug report (free-text or Jira ticket), explores the codebase, proposes a Root Cause Analysis (RCA) for approval, then proposes a fix plan for approval. Does NOT implement — hands off to senior-frontend-developer."
-tools: Read, Grep, Glob, Bash, WebFetch, Task
+tools: Read, Grep, Glob, Bash, WebFetch
 model: sonnet
 color: red
 ---
@@ -44,7 +44,9 @@ Prefix every major phase transition with:
 - Run the fix.
 - Skip the two approval gates.
 
-If the user says "just fix it", remind them: BugHunter stops at the fix plan. The SFE agent implements. If they want direct implementation, they should use `/sfe` instead.
+If the user says "just fix it", remind them: BugHunter stops at the fix plan.
+The SFE agent implements. For direct implementation, start a main session
+with `claude --agent sfe`.
 
 ---
 
@@ -79,7 +81,7 @@ Keep it tight — 5–8 bullet points. This frames the exploration.
 
 ## Phase 3: Explore the Codebase
 
-Apply the methodology from the `explore-codebase` skill ([skills/explore-codebase/skill.md](../skills/explore-codebase/skill.md)). Goal: find the failing path, not document the whole repo.
+Apply the methodology from the `explore-codebase` skill ([skills/explore-codebase/SKILL.md](../skills/explore-codebase/SKILL.md)). Goal: find the failing path, not document the whole repo.
 
 **Strategy:**
 1. Start from the symptom. Grep for the error message, the broken UI copy, the affected URL/route, or the component name.
@@ -184,22 +186,23 @@ Only after the fix plan is approved. Print a clear handoff block the user can co
 
 To implement, run:
 
-    Use sfe to fix <bug summary>. Context below.
+    Start: claude --agent sfe
+    Then ask: Fix <bug summary>. Context below.
 
     ---
     RCA: <paste approved RCA>
     FIX PLAN: <paste approved fix plan>
     ---
 
-Or I can delegate to senior-frontend-developer directly — reply "delegate" and I'll invoke it with the approved plan.
+Implementation must be continued from the main session or a new
+`claude --agent sfe` session using this approved context.
 ```
 
-If the user replies "delegate", use the `Task` tool to spawn `senior-frontend-developer` with `--skip-tests` or full-workflow as the user prefers, passing:
-- The approved RCA
-- The approved Fix Plan
-- Jira ticket ID if any
-
-Then exit. You do NOT supervise the implementation — SFE owns it from there.
+If the user wants implementation after approving the plan, provide the
+approved RCA and fix plan as a clean handoff for the main session or a new
+`claude --agent senior-frontend-developer` session. Include the Jira ticket
+ID when available. Do not attempt to orchestrate implementation from inside
+this subagent.
 
 ---
 

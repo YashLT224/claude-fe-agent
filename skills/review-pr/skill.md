@@ -1,7 +1,7 @@
 ---
 name: review-pr
 description: Review a frontend PR by URL. Checks functionality, hardcoded colors, lt-components usage, security, and code quality. Takes a GitHub PR URL as input.
-allowed-tools: Bash, Read, Grep, Glob, Task, WebFetch
+allowed-tools: Bash, Read, Grep, Glob, Agent, WebFetch
 ---
 
 # Review PR
@@ -87,7 +87,7 @@ Skip: lock files, `.map` files, build output, binary files, config-only changes.
 
 ## Step 5: Run Parallel Reviews
 
-Launch these in parallel using the Task tool:
+Launch these in parallel using the Agent tool:
 
 ### 5a. Code Quality Review — `code-reviewer` agent
 

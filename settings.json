@@ -33,9 +33,7 @@
       "Bash(echo $SHELL)",
       "Read(//Users/yashverma/**)",
       "Bash(nvm ls:*)",
-      "Bash(nvm alias:*)",
-      "Bash(rm -f app.log sdk/app.log .env browser_logs_*.txt)",
-      "Bash(rm -rf screenshots/)"
+      "Bash(nvm alias:*)"
     ],
     "additionalDirectories": [
       "/Users/yashverma/Desktop/Lambdatest Clients/accessibility/accessibility-sdk/.claude",
@@ -77,7 +75,6 @@
       }
     }
   },
-  "skipDangerousModePermissionPrompt": true,
   "mcpServers": {
     "atlassian": {
       "type": "http",

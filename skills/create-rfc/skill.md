@@ -1,7 +1,7 @@
 ---
 name: create-rfc
 description: Create RFC (Request for Comments) documents from JIRA tickets and code changes. Generates standardized RFC following LambdaTest SDLC process for automatic JIRA ticket creation.
-allowed-tools: Read, Write, Bash, AskUserQuestion, Task, Glob, Grep, WebFetch, mcp__plugin_atlassian_atlassian__getJiraIssue
+allowed-tools: Read, Write, Bash, AskUserQuestion, Agent, Glob, Grep, WebFetch, mcp__plugin_atlassian_atlassian__getJiraIssue
 ---
 
 # Create RFC Skill
