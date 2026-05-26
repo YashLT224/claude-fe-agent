@@ -86,29 +86,32 @@ flowchart TD
     CC --> CONFIG["settings.json + workflow-config.json<br/>Rules and integrations"]
     CC --> MEMORY["/remember<br/>Project memory"]
 
+    CC --> AUTO["/do<br/>Optional smart router"]
     CC --> ROUTE{"Choose workflow by task risk"}
+    AUTO --> ROUTE
 
     ROUTE --> DIRECT["claude --agent sfe<br/>Direct tiny edit"]
     ROUTE --> EXEC["/execute<br/>Daily frontend change"]
-    ROUTE --> IMPL["/implement<br/>Production feature"]
-    ROUTE --> BUG["claude --agent bug-hunter<br/>RCA investigation"]
+    ROUTE --> BUILD["/build or /implement<br/>Production feature"]
+    ROUTE --> FIX["/fix<br/>Bug investigation and delivery"]
     ROUTE --> DESIGN["/design-to-code<br/>Design implementation"]
     ROUTE --> REVIEW["/review-changes or /review-pr<br/>Review"]
 
-    BUG --> HANDOFF["Approved RCA and fix plan"]
-    HANDOFF --> SFE["claude --agent sfe"]
+    SFE["claude --agent sfe"] --> BUG["bug-hunter<br/>RCA support for /fix"]
     DIRECT --> SFE
     EXEC --> SFE
-    IMPL --> SFE
+    BUILD --> SFE
+    FIX --> SFE
     DESIGN --> SFE
 
     SFE --> TEST["Test writer / verifier"]
     SFE --> A11Y["Accessibility check"]
     SFE --> SECURITY["Security audit when relevant"]
-    SFE --> VISUAL["/visual-check for UI changes"]
+    SFE --> VISUAL["ui-validator + /visual-check<br/>for UI changes"]
 
     EXEC --> STATE[".claude/workflow-state/"]
-    IMPL --> STATE
+    BUILD --> STATE
+    FIX --> STATE
     SFE --> DELIVERY["Implementation summary / PR-ready result"]
 ```
 
@@ -169,12 +172,15 @@ Refresh memory when the project architecture changes:
 
 ```mermaid
 flowchart TD
-    TASK["New frontend task"] --> TYPE{"What kind of work is it?"}
+    TASK["New frontend task"] --> AUTO{"Want automatic routing?"}
+    AUTO -->|"Yes"| DO["/do task"]
+    AUTO -->|"Choose directly"| TYPE{"What kind of work is it?"}
+    DO --> TYPE
 
     TYPE -->|"Tiny, unambiguous edit"| SMALL["Start claude --agent sfe<br/>Request --direct work"]
     TYPE -->|"Normal component or page update"| MEDIUM["/execute task"]
-    TYPE -->|"Major feature or high-risk change"| LARGE["/implement ticket-or-task"]
-    TYPE -->|"Bug with unclear root cause"| BUG["Start claude --agent bug-hunter"]
+    TYPE -->|"Major feature or high-risk change"| LARGE["/build ticket-or-task"]
+    TYPE -->|"Bug with unclear root cause"| BUG["/fix ticket-or-bug"]
     TYPE -->|"Figma or reference-based UI"| FIGMA["/design-to-code reference"]
     TYPE -->|"Validate visible UI"| UI["/visual-check"]
     TYPE -->|"Review changes"| REV["/review-changes or /review-pr"]
@@ -184,11 +190,13 @@ flowchart TD
 | Task | Invocation | Result |
 | --- | --- | --- |
 | Copy, spacing, icon, URL, or tiny accessibility edit | Start `claude --agent sfe`, ask for `--direct` implementation | Minimal edit and focused check |
+| Unsure which workflow fits | `/do <task>` | Classifies and runs direct, execute, build, fix, review, or validation flow |
 | Filter, skeleton, validation, responsive fix, normal UI enhancement | `/execute <task>` | Focused exploration, approved approach, implementation, targeted verification |
-| Jira feature, new flow, significant refactor, sensitive change | `/implement <ticket-or-task>` | Full approved production workflow |
-| Bug needing diagnosis or RCA | Start `claude --agent bug-hunter` | RCA and fix plan before implementation |
+| Jira feature, new flow, significant refactor, sensitive change | `/build <ticket-or-task>` | Preferred full approved production workflow (`/implement` remains compatible) |
+| Bug needing diagnosis or RCA plus an approved fix | `/fix <ticket-or-bug>` | Investigation, RCA approval, fix-plan approval, implementation, regression validation |
 | Figma/screenshot-based UI work | `/design-to-code <reference>` | Design-system-aware UI implementation |
 | Rendered UI confidence | `/visual-check` | Desktop/mobile browser verification |
+| Focused accessibility validation | `/a11y-check` | Findings-only accessibility review |
 | Local source review | `/review-changes` | Code quality/a11y findings |
 | PR review | `/review-pr <PR URL>` | PR findings |
 | Security-sensitive code | `/security-audit` | Security findings |
@@ -215,6 +223,7 @@ flowchart TD
 | `test-case-verifier` | Run tests and update test status | Fix implementation |
 | `code-reviewer` | Report correctness, quality, reuse, performance, and testing findings | Silently rewrite feature code |
 | `a11y-checker` | Report WCAG-related UI/accessibility findings | Own feature implementation |
+| `ui-validator` | Browser-check rendered UI, responsive states, interactions, and visual consistency | Silently edit production code |
 
 ### Orchestration Rule
 
@@ -323,7 +332,7 @@ security-sensitive, or introduces a major new user flow.
 
 ---
 
-## Workflow 3: `/implement` For Production Features
+## Workflow 3: `/build` For Production Features
 
 Use for:
 
@@ -336,9 +345,12 @@ Use for:
 Examples:
 
 ```text
-/implement TTN-12345
-/implement add onboarding verification flow
+/build TTN-12345
+/build add onboarding verification flow
 ```
+
+`/build` is the preferred human-facing name for this workflow. Existing
+`/implement` invocations remain supported and follow the same contract.
 
 ```mermaid
 flowchart TD
@@ -377,27 +389,20 @@ flowchart TD
 | Auth, storage, redirects, raw HTML, external inputs, sensitive API behavior | `/security-audit` |
 | Meaningful multi-file change | `/review-changes` |
 
-`/implement` is the full workflow contract. It is intentionally not used for
-small tasks.
+`/build` (and its compatible `/implement` entrypoint) is the full workflow
+contract. It is intentionally not used for small tasks.
 
 ---
 
-## Workflow 4: Bug Investigation and Fix Handoff
+## Workflow 4: `/fix` Bug Investigation and Delivery
 
 Use for bugs where the cause is not already obvious or where an evidence-based
 analysis matters.
 
-Start:
-
-```bash
-cd /path/to/project
-claude --agent bug-hunter
-```
-
-Then describe the bug or provide the Jira ticket:
+From the main SFE session, describe the bug or provide the Jira ticket:
 
 ```text
-Investigate TTN-45678.
+/fix TTN-45678
 ```
 
 ```mermaid
@@ -410,19 +415,14 @@ flowchart TD
     ROK -->|"Yes"| PLAN["Fix plan"]
     PLAN --> POK{"Fix plan approved?"}
     POK -->|"No"| PLAN
-    POK -->|"Yes"| HANDOFF["Copy approved context"]
-    HANDOFF --> SFE["Start claude --agent sfe"]
-    SFE --> FIX["Implement fix"]
+    POK -->|"Yes"| SFE["sfe implements approved fix"]
+    SFE --> FIX["Production edit"]
     FIX --> REG["Regression test and validation"]
 ```
 
-`bug-hunter` does not edit production code. After the fix plan is approved:
-
-```bash
-claude --agent sfe
-```
-
-Provide the approved RCA and fix plan, then let `sfe` implement and validate.
+`/fix` is invoked in the main `sfe` session. It uses `bug-hunter` for
+evidence-based analysis only; after both approval gates, `sfe` implements and
+validates the correction.
 
 ---
 
@@ -442,7 +442,9 @@ The implementation should:
 
 ### `/visual-check`
 
-Use after any visible component/page/layout change.
+Use after any visible component/page/layout change. In this toolkit it uses
+`kane-cli` to open a visible browser by default; `ui-validator` is the
+findings-only specialist agent for independent rendered UI review.
 
 ```mermaid
 flowchart LR
@@ -537,7 +539,8 @@ Tracked workflows write only inside the **target frontend project**:
 | --- | --- |
 | Direct tiny edit | None |
 | `/execute` | `state.json`, `requirements.json`, `exploration.json`, `progress.md` |
-| `/implement` | All relevant state files |
+| `/build` or `/implement` | All relevant state files |
+| `/fix` | RCA/fix approvals, then artifacts selected by the implementation scope |
 | `bug-hunter` | RCA and plan in conversation; implementation artifacts begin after SFE handoff |
 
 Do not create alternate workflow files such as `current-workflow.json`,
@@ -551,12 +554,16 @@ Do not create alternate workflow files such as `current-workflow.json`,
 
 | Skill | Purpose |
 | --- | --- |
+| `/do` | Route a task to direct, execute, build, fix, review, or visual validation |
+| `/build` | Preferred full production feature workflow (`/implement` compatible) |
 | `/implement` | Full production feature workflow |
 | `/execute` | Normal daily frontend implementation workflow |
+| `/fix` | Approved bug investigation and implementation workflow |
 | `/gather-requirements` | Structure Jira, GitHub, or manual requirements |
 | `/explore-codebase` | Find relevant project patterns and similar features |
 | `/design-to-code` | Turn visual requirements into project-compatible UI |
 | `/visual-check` | Confirm rendered UI in a browser |
+| `/a11y-check` | Focused accessibility review for changed UI |
 | `/remember` | Cache stable project context |
 | `/review-changes` | Review local changed code |
 | `/security-audit` | Audit security-relevant changed code |
@@ -673,6 +680,10 @@ issues:
 | Canonical `.claude/workflow-state/` | Stop state artifacts from splitting across paths |
 | `/visual-check` | Make browser verification part of frontend completion |
 | `/doctor` | Add read-only toolkit diagnostics |
+| `/do`, `/build`, and `/fix` | Add task routing, preferred full-build entrypoint, and end-to-end bug flow |
+| `/a11y-check` | Make findings-only accessibility validation directly invokable |
+| `ui-validator` agent | Add independent browser-based visual and responsive review |
+| `kane-cli` visual-check engine | Make visible browser verification predictable |
 | Safer permissions | Remove automatic destructive shell allowances and dangerous bypass default |
 
 Existing MCP integrations remain configured.
@@ -691,7 +702,7 @@ claude agents
 
 Confirm:
 
-- `sfe`, `senior-frontend-developer`, and `bug-hunter` are listed as user agents.
+- `sfe`, `senior-frontend-developer`, `bug-hunter`, and `ui-validator` are listed as user agents.
 - Every custom workflow skill has a `SKILL.md` entry with valid metadata.
 - `settings.json` and `workflow-config.json` parse correctly.
 - No destructive permission is added without a deliberate reason.

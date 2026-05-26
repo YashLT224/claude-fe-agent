@@ -16,11 +16,21 @@ running. Ask one concise question only if these cannot be discovered.
 ## Flow
 
 1. Use an existing local server or start the detected development command.
-2. Open the affected page with available browser automation.
-3. Verify at one desktop and one narrow mobile viewport.
-4. Exercise changed interactions and states.
-5. Inspect relevant console errors and failed resources/API calls.
-6. Capture screenshots when documenting defects or significant UI completion.
+2. Use `kane-cli` as this toolkit's browser engine. Run `kane-cli whoami`
+   before the first check; if authentication is missing, request login before
+   attempting verification.
+3. Open a visible browser by default with:
+
+   ```bash
+   kane-cli run "<route, states, interactions, and assertions>" --agent --timeout 120
+   ```
+
+   Do not pass `--headless` unless the user explicitly requests background
+   verification.
+4. Verify at one desktop and one narrow mobile viewport.
+5. Exercise changed interactions and states.
+6. Inspect relevant console errors and failed resources/API calls.
+7. Capture screenshots when documenting defects or significant UI completion.
 
 ## Checklist
 

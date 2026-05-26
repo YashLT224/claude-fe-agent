@@ -11,13 +11,25 @@
   },
 
   "workflow_contracts": {
+    "do": {
+      "purpose": "smart router for selecting the appropriate frontend workflow",
+      "routes_to": ["direct", "execute", "build", "fix", "review-changes", "visual-check"]
+    },
     "implement": {
       "purpose": "production feature or major approved fix",
+      "phases": ["requirements", "exploration", "approach", "plan", "tests", "execution", "validation"]
+    },
+    "build": {
+      "purpose": "preferred full production feature command; alias of implement",
       "phases": ["requirements", "exploration", "approach", "plan", "tests", "execution", "validation"]
     },
     "execute": {
       "purpose": "medium daily frontend change",
       "phases": ["requirements", "exploration", "approach", "execution", "targeted_validation"]
+    },
+    "fix": {
+      "purpose": "bug investigation followed by approved implementation and regression validation",
+      "phases": ["intake", "investigation", "rca_approval", "fix_plan_approval", "execution", "regression_validation"]
     },
     "direct": {
       "purpose": "tiny self-contained edit",
