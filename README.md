@@ -546,6 +546,21 @@ Tracked workflows write only inside the **target frontend project**:
 Do not create alternate workflow files such as `current-workflow.json`,
 `plan.json`, or `test-baseline.json`.
 
+### Clear Completed Markdown State
+
+After review, validation, and acceptance or commit, remove temporary Markdown
+task notes without touching application documentation:
+
+```text
+/clear-workflow
+/clear-workflow --confirm
+```
+
+The first command previews matching files. The confirmed command deletes only
+Markdown files directly inside `.claude/workflow-state/`, such as `plan.md`,
+`todo.md`, `testCases.md`, `issues.md`, `progress.md`, and `report.md`.
+Workflow JSON files are preserved unless you explicitly request their cleanup.
+
 ---
 
 ## Skills Reference
@@ -568,6 +583,7 @@ Do not create alternate workflow files such as `current-workflow.json`,
 | `/review-changes` | Review local changed code |
 | `/security-audit` | Audit security-relevant changed code |
 | `/doctor` | Diagnose toolkit health without changing the setup |
+| `/clear-workflow` | Clear completed Markdown task state without touching project docs |
 
 ### Supporting Skills
 
