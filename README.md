@@ -116,9 +116,43 @@ Update shared npm packages across multiple repositories in one command:
 
 ### Agents
 
-| Agent           | Description                    |
-| --------------- | ------------------------------ |
-| `code-reviewer` | Reviews code in any FE project |
+| Agent                        | Description                                          |
+| ---------------------------- | ---------------------------------------------------- |
+| `senior-frontend-developer`  | Orchestrator — classifies tasks, plans, builds, fixes |
+| `test-writer`                | Writes test files + populates testCases.md           |
+| `test-case-verifier`         | Runs tests + updates testCases.md                    |
+| `code-reviewer`              | Reviews code in any FE project                       |
+| `a11y-checker`               | WCAG 2.1 AA accessibility compliance                 |
+
+### Senior Frontend Developer — Agent Architecture
+
+```
+senior-frontend-developer
+│
+├── SKILLS (specialized workflows)
+│   ├── /explore-codebase      → Deep codebase analysis (3 parallel agents)
+│   ├── /design-to-code        → Figma → code with theme tokens
+│   ├── /review-changes        → Code quality + duplicates + a11y
+│   └── /security-audit        → Security vulnerability scanning
+│
+├── SUB-AGENTS (dedicated workers)
+│   ├── test-writer            → Writes test files + populates testCases.md
+│   ├── test-case-verifier     → Runs tests + updates testCases.md
+│   ├── code-reviewer          → Used internally by /review-changes
+│   └── a11y-checker           → Used internally by /review-changes
+│
+├── BUILT-IN AGENTS
+│   ├── Explore                → Fast codebase search (used by /explore-codebase)
+│   ├── Plan                   → Architecture planning
+│   └── Bash                   → Run tests, lint, build, git
+│
+└── MCP INTEGRATIONS
+    ├── Jira MCP               → Fetch tickets, read requirements
+    ├── Figma MCP              → Fetch design specs
+    └── GitHub MCP             → Issues, PRs
+```
+
+It's not doing everything alone — it has **4 skills**, **4 sub-agents**, **3 built-in agents**, and **3 MCP integrations** backing it up. It just owns the decisions and the code.
 
 ### Configuration Files
 
@@ -150,7 +184,11 @@ claude-fe-agent/
 │   └── bulk-update-packages/    # Bulk npm package updates
 │
 ├── agents/
-│   └── code-reviewer.md         # Code review agent
+│   ├── senior-frontend-developer.md  # Orchestrator agent
+│   ├── test-writer.md                # Test case writer
+│   ├── test-case-verifier.md         # Test runner & verifier
+│   ├── code-reviewer.md              # Code review agent
+│   └── a11y-checker.md               # Accessibility checker
 │
 └── memory/
     ├── index.json               # Project index

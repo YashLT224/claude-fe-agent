@@ -64,7 +64,7 @@ create_symlink() {
     echo -e "  ${GREEN}✓${NC} $name"
 }
 
-echo -e "${GREEN}Setting up symlinks...${NC}"
+echo -e "${GREEN}Setting up  inks...${NC}"
 echo ""
 
 # Symlink main config files
